@@ -1,68 +1,100 @@
-class TicTacToe:
-    def __init__(self):
-        self.board = [" " for _ in range(9)]
-        self.current_player = ""
-        self.game_over = False
+import random
 
-    def print_board(self):
-        for i in range(0, 9, 3):
-            print(f" {self.board[i]} | {self.board[i + 1]} | {self.board[i + 2]} ")
-            if i < 6:
-                print("---+---+---")
+def print_board(board):
+    for row in board:
+        print(" | ".join(row))
+        print("-" * 9)
 
-    def make_move(self, position):
-        if self.board[position] == " ":
-            self.board[position] = self.current_player
-            self.check_winner()
-            self.check_draw()
-            self.current_player = "O" if self.current_player == "X" else "X"
-        else:
-            print("That cell is already taken. Try again.")
+# Function to check if a player has won
+def check_win(board, player):
+    for row in board:
+        if all(cell == player for cell in row):
+            return True
 
-    def check_winner(self):
-        win_conditions = [
-            (0, 1, 2), (3, 4, 5), (6, 7, 8),
-            (0, 3, 6), (1, 4, 7), (2, 5, 8),
-            (0, 4, 8), (2, 4, 6)
-        ]
-        
-        for condition in win_conditions:
-            a, b, c = condition
-            if self.board[a] == self.board[b] == self.board[c] != " ":
-                print(f"Player {self.current_player} wins!")
-                self.game_over = True
+    for col in range(3):
+        if all(board[row][col] == player for row in range(3)):
+            return True
 
-    def check_draw(self):
-        if " " not in self.board and not self.game_over:
-            print("It's a draw!")
-            self.game_over = True
+    if all(board[i][i] == player for i in range(3)) or all(board[i][2 - i] == player for i in range(3)):
+        return True
 
-    def play(self):
-        print("Welcome to Tic-Tac-Toe!")
-        play_again = True
+    return False
 
-        while play_again:
-            self.board = [" " for _ in range(9)]
-            self.current_player = ""
-            self.game_over = False
+# Function to generate the computer's move using magic square strategy
+def generate_computer_move(board, player):
+    magic_square = [[8, 3, 4], [1, 5, 9], [6, 7, 2]]
+    best_score = float('-inf')
+    best_move = None
 
-            player_choice = input("Choose your symbol (X/O): ").upper()
-            while player_choice not in ["X", "O"]:
-                player_choice = input("Invalid choice. Choose X or O: ").upper()
+    for i in range(3):
+        for j in range(3):
+            if board[i][j] == " ":
+                board[i][j] = player
+                score = 0
 
-            self.current_player = player_choice
+                for row in range(3):
+                    for col in range(3):
+                        if board[row][col] == player:
+                            score += magic_square[row][col]
+                        elif board[row][col] != " ":
+                            score -= magic_square[row][col]
 
-            while not self.game_over:
-                self.print_board()
-                position = int(input(f"Player {self.current_player}, enter position (1-9): ")) - 1
-                if position >= 0 and position < 9:
-                    self.make_move(position)
+                if score > best_score:
+                    best_score = score
+                    best_move = (i, j)
+
+                board[i][j] = " "
+
+    return best_move
+
+# Main game loop
+def play_game():
+    while True:
+        board = [[" " for _ in range(3)] for _ in range(3)]
+        players = ["X", "O"]
+
+        print("Welcome to Tic Tac Toe!")
+        print_board(board)
+
+        # Choose who plays first
+        first_player = input("Who should play first(X - Human, O - Computer), 'X' or 'O'? ").upper()
+        if first_player not in ["X", "O"]:
+            print("Invalid input. Defaulting to 'X' as starting player.")
+            first_player = "X"
+
+        current_player = first_player
+
+        while True:
+            print_board(board)
+
+            if current_player == "X":
+                row = int(input("Enter the row (0-2): "))
+                col = int(input("Enter the column (0-2): "))
+                if 0 <= row < 3 and 0 <= col < 3 and board[row][col] == " ":
+                    board[row][col] = current_player
                 else:
-                    print("Invalid position. Try again.")
-            self.print_board()
+                    print("Invalid move. Try again.")
+                    continue
+            else:
+                print("Computer's turn...")
+                row, col = generate_computer_move(board, current_player)
+                board[row][col] = current_player
 
-            play_again = input("Do you want to play again? (yes/no): ").lower() == "yes"
+            if check_win(board, current_player):
+                print_board(board)
+                print(f"{current_player} wins!")
+                break
+            elif all(cell != " " for row in board for cell in row):
+                print_board(board)
+                print("It's a draw!")
+                break
 
-if __name__ == "__main__":
-    game = TicTacToe()
-    game.play()
+            current_player = "X" if current_player == "O" else "O"
+
+        play_again = input("Do you want to play again? (yes/no): ").lower()
+        if play_again != "yes":
+            print("Thank you for playing!")
+            break
+
+# Start the game
+play_game()
