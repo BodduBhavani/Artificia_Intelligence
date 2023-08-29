@@ -1,3 +1,4 @@
+import math
 from collections import defaultdict
 
 visited = defaultdict(lambda: False)
@@ -28,13 +29,28 @@ def Water_Jug_problem(X, Y):
     else:
         return False
 
+def check():
+    if J1 <= L and J2 <= L:
+        print("Not possible")
+        return True
+    elif (J1 / 2 == J2 or J2 / 2 == J1) and (J1 != L and J2 != L):
+        print("Not Possible")
+        return True
+    elif L % (math.gcd(J1, J2)) != 0:
+        print("Not Possible")
+        return True
+    return False
+
 # Main Code
 J1 = int(input("Enter the volume of the first jug: "))
 J2 = int(input("Enter the volume of the second jug: "))
 L = int(input("Enter the target volume: "))
-print("Path is as Follow:")
 
-if Water_Jug_problem(0, 0):
-    print("Solution found.")
+if check():
+    print()
 else:
-    print("No solution found.")
+    print("Path is as Follow:")
+    if Water_Jug_problem(0, 0):
+        print("Solution found.")
+    else:
+        print("No solution found.")
