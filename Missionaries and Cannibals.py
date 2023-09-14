@@ -1,64 +1,118 @@
-def valid_state(state):
-    m_left, c_left, m_right, c_right, side = state
-    if m_left < 0 or c_left < 0 or m_right < 0 or c_right < 0:
+from collections import deque
+
+# Function to check if a state is valid
+def is_valid_state(state, max_missionaries, max_cannibals):
+    missionaries, cannibals, boat = state
+    if (
+        missionaries < 0
+        or cannibals < 0
+        or missionaries > max_missionaries
+        or cannibals > max_cannibals
+    ):
         return False
-    if m_left > 0 and m_left < c_left:
+    if (
+        missionaries < cannibals
+        and missionaries > 0
+    ):
         return False
-    if m_right > 0 and m_right < c_right:
+    if (
+        max_missionaries - missionaries < max_cannibals - cannibals
+        and max_missionaries - missionaries > 0
+    ):
         return False
     return True
 
-def print_state(state):
-    m_left, c_left, m_right, c_right, side = state
-    print(f"Left side: {m_left}M {c_left}C | Right side: {m_right}M {c_right}C | Boat: {'Left' if side == 0 else 'Right'}")
+# Function to generate valid next states
+def generate_next_states(state, max_missionaries, max_cannibals):
+    possible_moves = [
+        (1, 0),  # Move 1 missionary
+        (0, 1),  # Move 1 cannibal
+        (2, 0),  # Move 2 missionaries
+        (0, 2),  # Move 2 cannibals
+        (1, 1),  # Move 1 missionary and 1 cannibal
+    ]
+    boat = state[2]
+    next_states = []
 
-def solve(initial_state):
-    m_left, c_left, _, _, _ = initial_state
-    print("Initial state:")
-    print_state(initial_state)
-    print("\n")
+    for move in possible_moves:
+        if boat == 1:
+            next_state = (
+                state[0] - move[0],
+                state[1] - move[1],
+                0,
+            )
+        else:
+            next_state = (
+                state[0] + move[0],
+                state[1] + move[1],
+                1,
+            )
 
-    visited_states = set()
-    stack = [(*initial_state, None)]
+        if (
+            is_valid_state(next_state, max_missionaries, max_cannibals)
+            and sum(move) > 0
+            and sum(move) <= 2
+        ):
+            next_states.append((next_state, move))  # Include the move in next_states
 
-    while stack:
-        m_left, c_left, m_right, c_right, side, prev_action = stack.pop()
+    return next_states
 
-        if (m_left, c_left, m_right, c_right, side) in visited_states:
-            continue
-        
-        visited_states.add((m_left, c_left, m_right, c_right, side))
+# Breadth-First Search to solve the problem
+def solve_missionaries_and_cannibals(max_missionaries, max_cannibals):
+    start_state = (max_missionaries, max_cannibals, 1)
+    goal_state = (0, 0, 0)
+    visited = set()
+    queue = deque([(start_state, [])])
 
-        if m_left == 0 and c_left == 0:
-            print("Goal state reached:")
-            print_state((m_left, c_left, m_right, c_right, side))
-            break
+    left_to_right = True  # Start with the boat moving from left to right
 
-        for action in [(1, 0), (2, 0), (0, 1), (0, 2), (1, 1)]:
-            if prev_action is not None and action[0] == -prev_action[0] and action[1] == -prev_action[1]:
-                continue
-            
-            new_m_left = m_left - action[0]
-            new_c_left = c_left - action[1]
-            new_m_right = m_right + action[0]
-            new_c_right = c_right + action[1]
-            new_side = 1 - side  # Toggle the side of the boat
-            new_state = (new_m_left, new_c_left, new_m_right, new_c_right, new_side)
+    while queue:
+        current_state, path = queue.popleft()
 
-            if valid_state(new_state):
-                if side == 0 and new_side == 1:
-                    boat_direction = "from Left to Right"
-                else:
-                    boat_direction = "from Right to Left"
-                
-                print(f"Move Boat {boat_direction}: {action[0]}M {action[1]}C")
-                print_state(new_state)
-                stack.append((*new_state, action))
+        if current_state == goal_state:
+            return path
 
-# Take user inputs for the number of missionaries and cannibals
-m = int(input("Enter the number of missionaries: "))
-c = int(input("Enter the number of cannibals: "))
-initial_state = (m, c, 0, 0, 0)  # The boat starts on the left side
+        visited.add(current_state)
 
-# Initialize the problem with the user input values
-solve(initial_state)
+        for next_state, move in generate_next_states(
+            current_state, max_missionaries, max_cannibals
+        ):
+            if next_state not in visited:
+                new_path = path + [
+                    (current_state, next_state, move)
+                ]  # Add the boat movement
+                queue.append((next_state, new_path))
+
+        # Alternate the direction of the boat's movement
+        left_to_right = not left_to_right
+
+    return None
+
+# Input the maximum number of missionaries and cannibals
+print("The task is to move all of them to the right side of the river")
+print("Rules:")
+print("1. The boat can carry at most two people")
+print("2. If cannibals number is greater than missionaries, then the cannibals would eat the missionaries")
+print("3. The boat cannot cross the river by itself with no people on board")
+
+max_missionaries = int(input("Enter the maximum number of missionaries: "))
+max_cannibals = int(input("Enter the maximum number of cannibals: "))
+
+if max_missionaries < 0 or max_cannibals < 0:
+    print("Invalid input. The maximum number of missionaries and cannibals must be non-negative.")
+else:
+    solution = solve_missionaries_and_cannibals(max_missionaries, max_cannibals)
+
+    if solution:
+        print("Solution found:")
+        for i, (from_state, to_state, move) in enumerate(solution):
+            if i % 2 == 0:
+                print(
+                    f"Step {i + 1}: Move from left to right - {move} - {from_state} to {to_state}"
+                )
+            else:
+                print(
+                    f"Step {i + 1}: Move from right to left - {move} - {from_state} to {to_state}"
+                )
+    else:
+        print("No solution found.")
