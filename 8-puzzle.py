@@ -39,19 +39,12 @@ def get_neighbors(state):
 def backtrack_solution(node):
     path = []
     while node is not None:
-        path.append(node.state)
+        path.append((node.state, node.parent.state if node.parent else None))
         node = node.parent
     path.reverse()
     return path
 
-def input_puzzle(prompt):
-    print(prompt)
-    state = []
-    for i in range(3):
-        row = list(map(int, input().split()))
-        state.append(row)
-    return state
-
+# Modify the solve_puzzle function
 def solve_puzzle(start_state, goal_state):
     open_list = [Node(start_state, 0, manhattan_distance(start_state, goal_state), None)]
     closed_set = set()
@@ -62,7 +55,8 @@ def solve_puzzle(start_state, goal_state):
         closed_set.add(tuple(map(tuple, current_state)))
 
         if current_state == goal_state:
-            return backtrack_solution(current_node)
+            solution_path = backtrack_solution(current_node)
+            return solution_path
 
         for neighbor_state in get_neighbors(current_state):
             if tuple(map(tuple, neighbor_state)) not in closed_set:
@@ -73,6 +67,40 @@ def solve_puzzle(start_state, goal_state):
 
     return None  # No solution found
 
+
+def input_puzzle(prompt):
+    print(prompt)
+    state = []
+    for i in range(3):
+        row = list(map(int, input().split()))
+        state.append(row)
+    return state
+
+# Function to print the movement of the zero
+def print_movement(prev_state, current_state):
+    blank_x, blank_y = None, None
+    prev_blank_x, prev_blank_y = None, None
+
+    for i in range(3):
+        for j in range(3):
+            if current_state[i][j] == 0:
+                blank_x, blank_y = i, j
+            if prev_state and prev_state[i][j] == 0:
+                prev_blank_x, prev_blank_y = i, j
+
+    if prev_state:
+        dx = blank_x - prev_blank_x
+        dy = blank_y - prev_blank_y
+
+        if dx == 1:
+            print("Move zero down")
+        elif dx == -1:
+            print("Move zero up")
+        elif dy == 1:
+            print("Move zero right")
+        elif dy == -1:
+            print("Move zero left")
+
 print("Enter the start state (3x3 grid, each row space-separated):")
 start_state = input_puzzle("")
 
@@ -82,9 +110,12 @@ goal_state = input_puzzle("")
 solution = solve_puzzle(start_state, goal_state)
 if solution:
     print("Solution found:")
-    for state in solution:
+    prev_state = None
+    for state, prev_state in solution:
         for row in state:
             print(row)
         print()
+        if prev_state:
+            print_movement(prev_state, state)
 else:
     print("No solution found.")
