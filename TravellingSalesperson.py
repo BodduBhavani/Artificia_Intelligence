@@ -1,35 +1,31 @@
-from sys import maxsize
+from itertools import permutations
 
 # Function to calculate the total weight of a path in the graph
 def calculatePathWeight(graph, path):
-    V = len(graph)
     total_weight = 0
-    for i in range(V - 1):
+    for i in range(len(path) - 1):
         from_vertex = path[i]
         to_vertex = path[i + 1]
         total_weight += graph[from_vertex][to_vertex]
     total_weight += graph[path[-1]][path[0]]  # Return to the starting point
     return total_weight
 
-# Function to solve the Traveling Salesman Problem using dynamic programming
-def tsp(graph):
+# Function to solve the Traveling Salesman Problem using a naive approach
+def tsp_naive(graph):
     V = len(graph)
-    # dp[mask][i] represents the minimum cost to reach vertex i, covering all vertices in the mask
-    dp = [[maxsize] * V for _ in range(1 << V)]
-    dp[1][0] = 0  # Starting from vertex 0
+    min_weight = float('inf')
+    optimal_path = []
 
-    for mask in range(1, 1 << V):
-        for u in range(V):
-            if (mask & (1 << u)) != 0:
-                for v in range(V):
-                    if u != v and (mask & (1 << v)) != 0:
-                        dp[mask][u] = min(dp[mask][u], dp[mask ^ (1 << u)][v] + graph[v][u])
+    # Generate all possible permutations of cities
+    all_permutations = permutations(range(V))
 
-    # Find the minimum path from the last vertex back to vertex 0
-    mask = (1 << V) - 1
-    min_path = min(dp[mask][v] + graph[v][0] for v in range(1, V))
+    for path in all_permutations:
+        weight = calculatePathWeight(graph, path)
+        if weight < min_weight:
+            min_weight = weight
+            optimal_path = list(path)
 
-    return min_path
+    return min_weight, optimal_path
 
 # Function to get the user-provided graph as a list of edge weights
 def getGraphFromUser(V):
@@ -47,6 +43,7 @@ if __name__ == "__main__":
     # Get the user-provided graph as a list of edge weights
     user_graph = getGraphFromUser(V)
 
-    # Calculate and print the total weight of the optimal TSP path
-    result = tsp(user_graph)
-    print("Total Weight of Optimal TSP Path:", result)
+    # Calculate the total weight and print the optimal TSP path using the naive approach
+    min_weight, optimal_path = tsp_naive(user_graph)
+    print("Total Weight of Optimal TSP Path (Naive Approach):", min_weight)
+    print("Optimal TSP Path (Naive Approach):", optimal_path)
