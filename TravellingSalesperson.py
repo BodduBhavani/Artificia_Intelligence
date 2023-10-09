@@ -1,49 +1,66 @@
-from itertools import permutations
+import sys
 
-# Function to calculate the total weight of a path in the graph
-def calculatePathWeight(graph, path):
-    total_weight = 0
-    for i in range(len(path) - 1):
-        from_vertex = path[i]
-        to_vertex = path[i + 1]
-        total_weight += graph[from_vertex][to_vertex]
-    total_weight += graph[path[-1]][path[0]]  # Return to the starting point
-    return total_weight
+def tsp(mask, city):
+    # Base case: All cities visited
+    if mask == (1 << n) - 1:
+        return distance[city][0], [city, 0]  # Return the distance and path
+    
+    # Initialize minimum distance and path
+    min_distance = sys.maxsize
+    min_path = []
+    
+    # Try to visit unvisited cities
+    for nxt_city in range(n):
+        if (mask & (1 << nxt_city)) == 0:
+            new_mask = mask | (1 << nxt_city)
+            new_distance, new_path = tsp(new_mask, nxt_city)
+            new_distance += distance[city][nxt_city]
+            if new_distance < min_distance:
+                min_distance = new_distance
+                min_path = [city] + new_path
+    
+    return min_distance, min_path
 
-# Function to solve the Traveling Salesman Problem using a naive approach
-def tsp_naive(graph):
-    V = len(graph)
-    min_weight = float('inf')
-    optimal_path = []
+# Get the number of vertices (cities) from the user
+n = int(input("Enter the number of vertices (cities): "))
 
-    # Generate all possible permutations of cities
-    all_permutations = permutations(range(V))
+# Initialize the names of vertices
+vertices = []
+print("Enter the names of vertices:")
+for i in range(n):
+    name = input(f"Enter the name of vertex {i + 1}: ")
+    vertices.append(name)
 
-    for path in all_permutations:
-        weight = calculatePathWeight(graph, path)
-        if weight < min_weight:
-            min_weight = weight
-            optimal_path = list(path)
+# Initialize a dictionary to store the ending vertices for each vertex
+ending_vertices = {}
+for vertex in vertices:
+    ending_vertex_names = input(f"Enter the ending vertices for {vertex} (comma-separated, e.g., A,B,C): ").split(",")
+    ending_vertices[vertex] = ending_vertex_names
 
-    return min_weight, optimal_path
+# Initialize the distance matrix
+distance = [[0] * n for _ in range(n)]
+print("Enter the distances between vertices:")
+for i in range(n):
+    for j in range(n):
+        if i != j:
+            if vertices[j] in ending_vertices[vertices[i]]:
+                dist = int(input(f"Enter the distance from {vertices[i]} to {vertices[j]}: "))
+                distance[i][j] = dist
 
-# Function to get the user-provided graph as a list of edge weights
-def getGraphFromUser(V):
-    graph = []
-    print("Enter the edge weights for the graph:")
-    for i in range(V):
-        row = [int(x) for x in input(f"Enter edge weights for vertex {i + 1} (e.g., 0 10 15 20): ").split()]
-        graph.append(row)
-    return graph
+start_vertex_name = input("Enter the starting vertex: ")
+start_city = vertices.index(start_vertex_name)  # Starting city
+initial_mask = 1  # Starting with the first city visited
 
-if __name__ == "__main__":
-    # Get the user-provided value of 'V'
-    V = int(input("Enter the number of vertices (V): "))
+# Call the TSP function
+result_distance, result_path = tsp(initial_mask, start_city)
 
-    # Get the user-provided graph as a list of edge weights
-    user_graph = getGraphFromUser(V)
+# Print the minimum distance
+print("Minimum Distance:", result_distance)
 
-    # Calculate the total weight and print the optimal TSP path using the naive approach
-    min_weight, optimal_path = tsp_naive(user_graph)
-    print("Total Weight of Optimal TSP Path (Naive Approach):", min_weight)
-    print("Optimal TSP Path (Naive Approach):", optimal_path)
+# Print the path of Vertices using arrow marks
+print("Path of Vertices:")
+for i, city in enumerate(result_path):
+    if i < len(result_path) - 1:
+        print(vertices[city], end=" -> ")
+    else:
+        print(vertices[city])
