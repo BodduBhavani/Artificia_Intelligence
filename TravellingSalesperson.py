@@ -1,66 +1,59 @@
-import sys
+import itertools
 
-def tsp(mask, city):
-    # Base case: All cities visited
-    if mask == (1 << n) - 1:
-        return distance[city][0], [city, 0]  # Return the distance and path
-    
-    # Initialize minimum distance and path
-    min_distance = sys.maxsize
-    min_path = []
-    
-    # Try to visit unvisited cities
-    for nxt_city in range(n):
-        if (mask & (1 << nxt_city)) == 0:
-            new_mask = mask | (1 << nxt_city)
-            new_distance, new_path = tsp(new_mask, nxt_city)
-            new_distance += distance[city][nxt_city]
-            if new_distance < min_distance:
-                min_distance = new_distance
-                min_path = [city] + new_path
-    
-    return min_distance, min_path
+# Function to calculate the total distance of a path
+def calculate_total_distance(path, graph):
+    total_distance = 0
+    for i in range(len(path) - 1):
+        total_distance += graph[path[i]][path[i+1]]
+    return total_distance
 
-# Get the number of vertices (cities) from the user
-n = int(input("Enter the number of vertices (cities): "))
+# Input the number of nodes
+num_nodes = int(input("Enter the number of nodes: "))
 
-# Initialize the names of vertices
-vertices = []
-print("Enter the names of vertices:")
-for i in range(n):
-    name = input(f"Enter the name of vertex {i + 1}: ")
-    vertices.append(name)
+# Initialize an empty graph as a dictionary
+graph = {}
 
-# Initialize a dictionary to store the ending vertices for each vertex
-ending_vertices = {}
-for vertex in vertices:
-    ending_vertex_names = input(f"Enter the ending vertices for {vertex} (comma-separated, e.g., A,B,C): ").split(",")
-    ending_vertices[vertex] = ending_vertex_names
+# Input the connections and weights
+for i in range(num_nodes):
+    node_name = input(f"Enter the name of node {i+1}: ")
+    num_outgoing_connections = int(input(f"Enter the number of connections from {node_name}: "))
+    connections = {}
+    for j in range(num_outgoing_connections):
+        connected_node, weight = input(f"Enter connected node and weight: ").split()
+        connections[connected_node] = int(weight)
+    graph[node_name] = connections
 
-# Initialize the distance matrix
-distance = [[0] * n for _ in range(n)]
-print("Enter the distances between vertices:")
-for i in range(n):
-    for j in range(n):
-        if i != j:
-            if vertices[j] in ending_vertices[vertices[i]]:
-                dist = int(input(f"Enter the distance from {vertices[i]} to {vertices[j]}: "))
-                distance[i][j] = dist
+# Ask for the starting position
+start_node = input("Enter the starting node: ")
 
-start_vertex_name = input("Enter the starting vertex: ")
-start_city = vertices.index(start_vertex_name)  # Starting city
-initial_mask = 1  # Starting with the first city visited
+# Generate all possible permutations of nodes starting from the specified node
+nodes = list(graph.keys())
+nodes.remove(start_node)
+permutations = itertools.permutations(nodes)
 
-# Call the TSP function
-result_distance, result_path = tsp(initial_mask, start_city)
+# Initialize variables to track the shortest path and distance
+shortest_path = None
+shortest_distance = float('inf')
 
-# Print the minimum distance
-print("Minimum Distance:", result_distance)
+# Initialize a list to store the remaining paths
+remaining_paths = []
 
-# Print the path of Vertices using arrow marks
-print("Path of Vertices:")
-for i, city in enumerate(result_path):
-    if i < len(result_path) - 1:
-        print(vertices[city], end=" -> ")
-    else:
-        print(vertices[city])
+# Find the shortest path and calculate the remaining paths
+for perm in permutations:
+    current_path = [start_node] + list(perm) + [start_node]
+    total_distance = calculate_total_distance(current_path, graph)
+    if total_distance < shortest_distance:
+        shortest_path = current_path
+        shortest_distance = total_distance
+    remaining_paths.append((list(perm), total_distance))
+
+# Print the shortest path and distance
+print(f"Shortest Path: {' -> '.join(shortest_path)}")
+print(f"Shortest Distance: {shortest_distance}")
+
+# Print the remaining paths with their distances
+for path, distance in remaining_paths:
+    print(f"Remaining Path from {start_node} to {path[-1]}: {' -> '.join([start_node] + path + [start_node])}")
+    print(f"Remaining Distance: {distance}")
+
+
